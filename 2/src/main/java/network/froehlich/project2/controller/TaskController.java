@@ -22,12 +22,12 @@ public class TaskController {
     }
 
     @GetMapping("/task/1")
-    String task1() {
+    public String task1() {
         return this.taskService.getResult(this.calculator1);
     }
 
     @GetMapping("/task/2")
-    String task2() {
+    public String task2() {
         return this.taskService.getResult(this.calculator2);
     }
 }
