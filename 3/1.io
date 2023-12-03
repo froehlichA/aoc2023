@@ -1,103 +1,94 @@
-input := File with("input.txt") asBuffer
-line_length := input split("\n") at(0) size + 1
+Date cpuSecondsToRun(
+  input := File with("input.txt") openForReading()
 
-digits := list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
-is_digit := method(c, digits contains (c))
-symbols := (
-  i := input clone removeSeq(".") removeSeq("\n")
-  digits foreach(d, i = i removeSeq(d))
-  i asList unique
-)
-is_symbol := method(c, symbols contains (c))
-
-engine_nums := Map clone
-
-parse_num := method(str, str clone removeSeq(".") asNumber)
-
-Num := Object clone do(
-  number ::= nil
-  index ::= nil
-  fromList ::= method(l,
-    n := Num clone setIndex(index)
-    num := 0
-    for(i, 0, l size - 1,
-      num = num + (10 ** (l size - 1 - i)) * (l at(i))
-    )
-    n setNumber(num)
-    n
+  Symbol := Object clone do(
+    content ::= nil
+    index ::= nil
   )
-  touch ::= method(i,
-    num_areas := list()
-    for(j, 0, number log10, num_areas = num_areas append(index + j))
-    touch_areas := list(
-      i - line_length - 1,
-      i - line_length + 0,
-      i - line_length + 1,
-      i - 1,
-      i + 1,
-      i + line_length - 1,
-      i + line_length + 0,
-      i + line_length + 1
+  Num := Symbol clone do(
+    fromList ::= method(l,
+      n := Num clone setIndex(self index)
+      num := 0
+      l_size := l size
+      l foreach(i, v,
+        num = num + (10 ** (l_size - 1 - i)) * v
+      )
+      n setContent(num)
     )
-    touches := false
-    num_areas foreach (a,
-      (touch_areas contains(a)) ifTrue(touches := true)
-    )
-    touches
   )
-)
 
-input foreach(i, v,
-  is_symbol(v asCharacter) ifTrue(
-    up_pos := i - line_length
-    down_pos := i + line_length
-    # Compute number in areas around v
-    areas := list(
-      list(up_pos - 3, up_pos + 3),
-      list(i - 3, i - 1),
-      list(i + 1, i + 3),
-      list(down_pos - 3, down_pos + 3)
-    )
+  digits := list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+  is_digit := method(c, digits contains(c))
 
-    input inclusiveSlice(up_pos - 3, up_pos + 3) println
-    input inclusiveSlice(i - 3, i + 3) println
-    input inclusiveSlice(down_pos - 3, down_pos + 3) println
+  num_map := Map clone
+  symbol_list := List clone
 
-    nums := list()
-    areas foreach(area_pos,
-      area := input inclusiveSlice(area_pos at(0), area_pos at(1))
-      area_characters := area asList map(i, v, list(v, i + (area_pos at(0))))
-      # Compute numbers
-      partial_nums := list()
-      for(j, 0, (area_characters size) - 1,
-        area_character := area_characters at(j)
-        character := area_character at(0)
-        index := area_character at(1)
-        is_digit(character) ifTrue(
-          partial_nums = partial_nums append(area_character)
-        ) ifFalse(
-          (partial_nums size > 0) ifTrue(
-            num := Num clone setIndex(partial_nums at(0) at(1)) fromList(partial_nums map(n, n at(0) asNumber))
-            nums = nums append(num)
-          )
-          partial_nums = list()
+  # Process lines
+  line := nil
+  line_nr := 0
+  line_length := nil
+
+  while((line = input readLine) != nil,
+    if(line_length == nil) then(line_length = line size)
+    # Step over characters and discover numbers
+    num := list()
+    start := 0
+    line foreach(i, v,
+      idx := line_nr * line_length + start
+      if(is_digit(v asCharacter)) then(
+        # Add digit to num array
+        if(num size == 0) then(start := i)
+        num = num append(v asCharacter asNumber)
+      ) else(
+        # Register num array as Num & reset list
+        if(num size > 0) then(
+          n := Num clone fromList(num) setIndex(idx)
+          num_map = num_map atPut("" .. idx, n)
+          num := list()
+        )
+        if((v asCharacter) != ".") then(
+          # Add symbol to map
+          idx := line_nr * line_length + i
+          s := Symbol clone setContent(v asCharacter) setIndex(idx)
+          symbol_list = symbol_list append(s)
         )
       )
-      (partial_nums size > 0) ifTrue(
-        num := Num clone setIndex(partial_nums at(0) at(1)) fromList(partial_nums map(n, n at(0) asNumber))
-        nums = nums append(num)
+    )
+
+    if(num size > 0) then(
+      n := Num clone fromList(num) setIndex(idx)
+      num_map = num_map atPut("" .. idx, n)
+    )
+
+    line_nr = line_nr + 1
+  )
+
+  # Discover all part numbers & calculate sum
+  part_map := Map clone
+  symbol_list foreach(s,
+    # Get all numbers in the surrounding area
+    nums := list()
+    for(i, -1, 1,
+      for(j, -3, 3,
+        index := s index + (i * line_length) + j
+        if(num_map hasKey("" .. index)) then(
+          nums = nums append(num_map at("" .. index))
+        )
       )
     )
-
-    # Filter out numbers that do not touch i
-    nums = nums select(n, n touch(i))
-    writeln("COMPUTED => ", nums)
-    # Add numbers to map
-    nums foreach(num,
-      engine_nums = engine_nums atPut("" .. (num index), num)
+    # Filter for values that touch the symbol
+    nums = nums select(n,
+      num_indexes := list()
+      for(j, 0, n content log10, num_indexes = num_indexes append(n index + j))
+      sym_indexes := list()
+      for(i, -1, 1, for(j, -1, 1, sym_indexes = sym_indexes append(s index + (i * line_length) + j)))
+      num_indexes detect(ni, sym_indexes contains(ni)) != nil
     )
-    writeln("===")
-  )
-)
 
-engine_nums values map(n, n number) reduce(+) println
+    nums foreach(n,
+      part_map = part_map atPut(""..(n index), n)
+    )  
+  )
+
+  part_map values map(content) reduce(+) println
+) println
