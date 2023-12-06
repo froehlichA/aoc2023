@@ -12,9 +12,7 @@ parseInput list = case list of
   [] -> (0,0)
 
 winningHolds :: Competition -> [Int]
-winningHolds competition = [hold_ms | hold_ms <- [0..allowed_ms], (allowed_ms - hold_ms) * hold_ms > record_distance]
-  where allowed_ms = fst competition
-        record_distance = snd competition
+winningHolds (allowed_ms, record_distance) = [hold_ms | hold_ms <- [0..allowed_ms], (allowed_ms - hold_ms) * hold_ms > record_distance]
 
 main :: IO()
 main = do
