@@ -1,2 +1,4 @@
 input.txt
 *.exe
+*.hi
+*.o
