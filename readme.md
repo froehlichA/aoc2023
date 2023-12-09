@@ -8,3 +8,4 @@
 - Day 6 implemented in [Haskell](https://www.haskell.org/)
 - Day 7 implemented in [Nix](https://nixos.org/)
 - Day 8 implemented in [F#](https://fsharp.org/)
+- Day 9 implemented in [D](https://dlang.org/)
