@@ -7,3 +7,4 @@
 - Day 5 implemented in [Nim](https://nim-lang.org/)
 - Day 6 implemented in [Haskell](https://www.haskell.org/)
 - Day 7 implemented in [Nix](https://nixos.org/)
+- Day 8 implemented in [F#](https://fsharp.org/)
